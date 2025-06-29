@@ -1,41 +1,43 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Todo } from '../types/Todo'
+import { useTodos } from '../hooks/useTodos'
 
 export default function EditTodoPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [todo, setTodo] = useState<Todo | null>(null)
+  const { fetchTodoById, updateTodo } = useTodos()
+
   const [textMain, setTextMain] = useState('')
   const [deadLine, setDeadLine] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [checkbox, setCheckbox] = useState(false)
+  const [createdTime, setCreatedTime] = useState('')
 
   useEffect(() => {
-    fetch(`/todos/${id}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Not found')
-        return res.json()
-      })
-      .then((data: Todo) => {
-        setTodo(data)
-        setTextMain(data.textMain)
-        setDeadLine(data.deadLine ? data.deadLine.slice(0, 16) : "")
+    if (!id) return
+    fetchTodoById(Number(id))
+      .then(data => {
+        if (data != null) {
+          setTextMain(data.textMain)
+          setDeadLine(data.deadLine ? data.deadLine.slice(0, 16) : '')
+          setCheckbox(data.checkbox)
+          setCreatedTime(data.createdTime)
+        }
       })
       .catch(() => alert('データが取得できませんでした'))
+      .finally(() => setLoading(false))
   }, [id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!todo) return
+    if (!id) return
 
     try {
-      await fetch(`/todos/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...todo,
-          textMain,
-          deadLine: deadLine || null
-        }),
+      await updateTodo(Number(id),{
+        textMain,
+        deadLine: deadLine || null,
+        checkbox,
+        createdTime
       })
       navigate('/')
     } catch {
@@ -43,7 +45,7 @@ export default function EditTodoPage() {
     }
   }
 
-  if (!todo) return <div>読み込み中…</div>
+  if (loading) return <div>読み込み中…</div>
 
   return (
     <div className="form-card">

@@ -1,30 +1,33 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTodos } from '../hooks/useTodos'
 import { Todo } from '../types/Todo'
 
 export default function ConfirmDeletePage() {
-    const { id } = useParams<{ id: string }>()
-    const navigate = useNavigate()
-    const [todo, setTodo] = useState<Todo | null>(null)
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const [todo, setTodo] = useState<Todo | null>(null)
+  const { fetchTodoById, deleteTodo } = useTodos()
 
-    useEffect(() => {
-        fetch(`/todos/${id}`)
-            .then(res => {
-                if (!res.ok) throw new Error('Not found')
-                return res.json()
-            })
-            .then(setTodo)
-            .catch(() => alert('データが取得できませんでした'))
-    }, [id])
+  useEffect(() => {
+    if (!id) return
+    fetchTodoById(Number(id))
+      .then(data => {
+        if (data) setTodo(data)
+        else throw new Error()
+      })
+      .catch(() => alert('取得失敗'))
+  }, [id])
 
-    const handleDelete = async () => {
-        try {
-            await fetch(`/todos/${id}`, { method: 'DELETE' })
-            navigate('/')
-        } catch {
-            alert('削除に失敗しました')
-        }
+  const handleDelete = async () => {
+    if (!id) return
+    try {
+      await deleteTodo(Number(id))
+      navigate('/')
+    } catch {
+      alert('削除に失敗しました')
     }
+  }
 
     if (!todo) return <div>読み込み中…</div>
 

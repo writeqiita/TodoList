@@ -1,27 +1,25 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTodos } from '../hooks/useTodos'
 
 export default function AddTodoPage() {
   const [textMain, setTextMain] = useState('')
   const [deadLine, setDeadLine] = useState('')
   const navigate = useNavigate()
+  const { addTodo } = useTodos()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!textMain.trim()) return
 
     try {
-      await fetch('/todos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          textMain,
-          checkbox: false,
-          deadLine: deadLine || null
-        }),
+      await addTodo({
+        textMain,
+        checkbox: false,
+        createdTime: new Date().toISOString(),
+        deadLine: deadLine || null
       })
-      navigate('/') // 追加後に一覧へ戻る
+      navigate('/')
     } catch (error) {
       alert('追加に失敗しました')
     }
